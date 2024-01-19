@@ -1,0 +1,45 @@
+---
+# tasks file for bucket_create
+- name: prepare S3 bucket
+  block:
+
+    - name: make sure boto, boto3, botocore are installed
+      pip:
+        name: "{{ item }}"
+      loop:
+        - boto
+        - boto3
+        - botocore
+
+    - name: define bucket policy
+      set_fact: 
+        s3_bucket_policy: |
+          {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "PublicRead",
+                  "Effect": "Allow",
+                  "Principal": "*",
+                  "Action": "s3:GetObject",
+                  "Resource": "arn:aws:s3:::iantonio-daniels-logs/*"
+                }
+              ]
+            }
+    - debug: msg="{{ s3_bucket_policy}}"
+ 
+    - name: create S3 bucket
+      s3_bucket:
+        name: iantonio-daniels-logs
+        region: us-east-1
+        state: present
+        policy: "{{ s3_bucket_policy }}"
+        public_access:
+          block_public_acls: false
+          ignore_public_acls: false
+          block_public_policy: false
+          restrict_public_buckets: false
+
+  # by specigying never on the tag of this block of code
+  # this blick will never run unless called with the create tag
+  tags: ['never', 'create']
